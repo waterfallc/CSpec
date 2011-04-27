@@ -108,11 +108,13 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>ActionMessages.Designer.cs</LastGenOutput>
       <CustomToolNamespace>Shell.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Shell.Resources\CommandMessages.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>CommandMessages.Designer.cs</LastGenOutput>
       <CustomToolNamespace>Shell.Resources</CustomToolNamespace>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

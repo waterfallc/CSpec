@@ -1,0 +1,1 @@
+CALL msbuild Build.xml /t:All 

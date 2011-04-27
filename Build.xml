@@ -9,6 +9,14 @@
     <ProjectFiles Include="src\**\*.csproj" Exclude="$(MSBuildProjectFile)"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <TestFiles Include="bin\**\Test\*.dll" Exclude="bin\**\Test\CSpec.dll"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <TestConsole Include="bin\**\CSpec.Console.exe" Exclude="bin\**\Test\CSpec.Console.exe" />
+  </ItemGroup>
+  
   <Target Name="Build">
     <MSBuild Projects ="@(ProjectFiles)"
              ContinueOnError ="false"
@@ -19,4 +27,12 @@
     <Copy SourceFiles="@(BuildOutput)" DestinationFolder="$(DeployDirectory)" />
 
   </Target>
+
+  <Target Name="RunSpec">
+    <Exec Command="@(TestConsole) runner $(MSBuildProjectDirectory)\bin\Debug\Test\%(TestFiles.Filename)%(TestFiles.Extension) -a"/>
+  </Target>
+
+  <Target Name="All" DependsOnTargets="Build;RunSpec">
+  </Target>
+  
 </Project>
