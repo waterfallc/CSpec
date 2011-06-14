@@ -9,7 +9,7 @@ using System.IO;
 
 namespace Test.Spec
 {
-	public class CSpecTestRunnerSpec : CSpecFacade<CSpecTestRunner>
+	public class CSpecTestRunnerSpec : CSpecFacade<ITestRunner>
 	{
         public CSpecTestRunnerSpec()
             : base(new CSpecTestRunner())

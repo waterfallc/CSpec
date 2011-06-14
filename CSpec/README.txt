@@ -1,1 +1,0 @@
-For documentation check cspec.codeplex.com

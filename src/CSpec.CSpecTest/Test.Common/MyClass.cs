@@ -25,6 +25,11 @@ namespace Test.Common
 			Total -= result;
 			return result;
 		}
+
+        public int Div(int a, int b)
+        {
+            return a / b;
+        }
 	}
 }
 

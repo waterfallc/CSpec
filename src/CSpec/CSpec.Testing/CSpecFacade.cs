@@ -33,8 +33,17 @@ namespace CSpec.Testing
 		/// </param>
         protected CSpecFacade(TClass objSpec)
         {
-            InitializeFacade(objSpec);
+            var inter = objSpec.GetType().GetInterfaces().FirstOrDefault();
+            if (inter != null)
+            {
+                Proxy.ProxyGenerator gen = new CSpec.Proxy.ProxyGenerator();
+                var obj = Activator.CreateInstance(gen.CreateProxy(objSpec.GetType(), inter));
+                ObjSpec = (TClass)obj;
+            }
+            else
+                InitializeFacade(objSpec);
         }
+
 
         protected CSpecFacade()
         { }

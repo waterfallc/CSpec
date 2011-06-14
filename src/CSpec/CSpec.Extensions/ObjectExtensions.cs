@@ -37,11 +37,30 @@ namespace CSpec.Extensions
         /// @rcontain:
         ///  It's used on collections and arrays to check for a specified item but using reflection matching
         ///  instead of reference.
+        /// 
+        /// @raise: [Class must implement Interface]
+        ///  It's used on methods to instrut that a certain set of parameter data
+        ///  should throw a specified exception.
+        ///  
+        /// @not_raise: [Class must implement Interface]
+        ///  It's used on methods to instrut that a certain set of parameter data
+        ///  should not throw a specified exception.
         ///  
         /// To enable strong typing use Tags namespace for strong typed methods.
         /// </summary>
         /// <example>
+        /// 
+        /// // Object Extension example
+        /// 
         /// obj.Sum(1,1).Should(@be => 2);
+        /// </example>
+        /// <example>
+        /// 
+        /// // Interface Extension example
+        /// // Note: obj should implement some interface
+        /// // in order for this extension to work
+        /// 
+        /// obj.Sum(1,1).Should(@raise => typeof(MyException));
         /// </example>
         /// <typeparam name="T"></typeparam>
         /// <typeparam name="N"></typeparam>
@@ -58,6 +77,9 @@ namespace CSpec.Extensions
                 case "not_be": return TagExtensions.NotBe(obj, operation.Compile()(obj));
                 case "contain": return TagExtensions.Contain(obj, operation.Compile()(obj));
                 case "rcontain": return TagExtensions.ReflectionContain(obj, operation.Compile()(obj));
+
+                case "raise": return TagExtensions.Raise(obj, operation.Compile()(obj));
+                case "not_raise": return TagExtensions.NotRaise(obj, operation.Compile()(obj));
             }
 
             throw new CSpecException("Not a keyword");

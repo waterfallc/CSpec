@@ -1,1 +1,0 @@
-CALL msbuild Build.xml /t:Build 

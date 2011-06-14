@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using CSpec.Proxy;
 
 namespace CSpec.Testing
 {
@@ -13,7 +14,7 @@ namespace CSpec.Testing
     /// <summary>
     /// Validates objects, that are described by CSpec.
     /// </summary>
-    public class CSpecTestRunner : ITestRunner
+    public class CSpecTestRunner : CSpecTestRunnerLookup, ITestRunner
     {
         /// <summary>
         /// Gets operations passed
@@ -39,7 +40,7 @@ namespace CSpec.Testing
         /// CSpecTestItem will be containing a name, description and result in this state.
         /// </summary>
         public event Action<CSpecTestItem> AfterOperation;
-		
+
          /// <summary>
          /// Runs tests on an assembly, it is advides that all 
          /// descriptor types will be kept in seperate assembly.
@@ -71,7 +72,7 @@ namespace CSpec.Testing
             }
             catch (Exception ex)
             {
-                HandleRunnerException(ex, testItem);
+                HandleRunnerException(ex, testItem, null);
             }
 
             Type facadeType = objType.BaseType;
@@ -110,6 +111,7 @@ namespace CSpec.Testing
         {
             MethodInfo beforeOp = null;
             MethodInfo afterOp = null;
+            Trace trace = null;
             Type objType = obj.GetType();
 
             //Now call the operation methods.
@@ -131,6 +133,18 @@ namespace CSpec.Testing
 
                 try
                 {
+                    if (describedObject != null && describedObject.GetType().GetInterfaces().Length != 0)
+                    {
+                        trace = (Trace)describedObject.GetType().GetField("trace").GetValue(describedObject);
+                        trace = new Trace();
+                        describedObject.GetType().GetField("trace").SetValue(describedObject, trace);
+
+                        //put to lookup
+                        //NOTE: when doing multithreaded runners the entire section of this code
+                        //should be locked by monitor
+                        CurrentDescribedObject = describedObject;
+                    }
+
                     if (field.FieldType.Name == "DescribeAll")
                     {
                         if (describedObject != null)
@@ -155,7 +169,7 @@ namespace CSpec.Testing
                 }
                 catch (System.Exception ex)
                 {
-                    HandleRunnerException(ex, testItem);
+                    HandleRunnerException(ex, testItem, trace);
                 }
 
                 if (afterOp != null)
@@ -166,7 +180,7 @@ namespace CSpec.Testing
         /// <summary>
         /// Handles the exceptions thrown by the testing method.
         /// </summary>
-        private void HandleRunnerException(Exception ex, CSpecTestItem testItem)
+        private void HandleRunnerException(Exception ex, CSpecTestItem testItem, Trace trace)
         {
             Failed++;
 
@@ -174,6 +188,17 @@ namespace CSpec.Testing
                 testItem.Results = "Test Failed: " + ex.InnerException.Message;
             else
                 testItem.Results = "CSpec Exception: " + ex.Message;
+
+            if (trace != null)
+            {
+                StringBuilder traceErrorBuilder = new StringBuilder();
+                traceErrorBuilder.AppendLine("\n Trace: ");
+
+                foreach (var item in trace.MethodCalls)
+                    traceErrorBuilder.AppendLine(item);
+
+                testItem.Results += traceErrorBuilder.ToString();
+            }
 
             testItem.TestSucceed = false;
 

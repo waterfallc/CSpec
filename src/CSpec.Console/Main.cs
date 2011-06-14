@@ -15,8 +15,17 @@ namespace CSpec.Shell
 		{
 			Console.WriteLine("CSpec Test Runner: \n");
 
+            
+			args = new string[3];
+			args[0] = "runner";
+            args[1] = @"C:\Users\BaxServices\Desktop\CSpec\bin\Debug\Test\CSpec.CSpecTest.dll";
+			args[2] = "-a";
+             
+				
+			
             ConsoleRunner runner = new ConsoleRunner();
             runner.Run(args);
+		
 		}
 	}
 }

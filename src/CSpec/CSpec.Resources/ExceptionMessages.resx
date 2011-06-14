@@ -120,6 +120,9 @@
   <data name="Key" xml:space="preserve">
     <value>Keyword evaluation failed</value>
   </data>
+  <data name="NoInterface" xml:space="preserve">
+    <value>Object does not implement an IntefaceType</value>
+  </data>
   <data name="NoKey" xml:space="preserve">
     <value>No keyword</value>
   </data>

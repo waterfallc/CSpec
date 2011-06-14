@@ -31,6 +31,7 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -77,6 +78,12 @@
     <Compile Include="CSpec.Extensions\NumberExtensions.cs" />
     <Compile Include="CSpec.Extensions\ObjectExtensions.cs" />
     <Compile Include="CSpec.Extensions\Tags\TagExtensions.cs" />
+    <Compile Include="CSpec.Proxy\DynamicBase.cs" />
+    <Compile Include="CSpec.Proxy\DynamicException.cs" />
+    <Compile Include="CSpec.Proxy\DynamicType.cs" />
+    <Compile Include="CSpec.Proxy\IDynamicTypeBuilder.cs" />
+    <Compile Include="CSpec.Proxy\ProxyGenerator.cs" />
+    <Compile Include="CSpec.Proxy\Trace.cs" />
     <Compile Include="CSpec.Resources\ExceptionMessages.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -86,6 +93,7 @@
     <Compile Include="CSpec.Testing\CSpecFacadeBase.cs" />
     <Compile Include="CSpec.Testing\CSpecFacadeStatic.cs" />
     <Compile Include="CSpec.Testing\CSpecTestItem.cs" />
+    <Compile Include="CSpec.Testing\CSpecTestRunnerLookup.cs" />
     <Compile Include="CSpec.Testing\ItAttribute.cs" />
     <Compile Include="CSpec.Testing\CSpecTestRunner.cs" />
     <Compile Include="CSpec.Testing\ITestRunner.cs" />
@@ -127,4 +135,5 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
 </Project>

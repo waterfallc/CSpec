@@ -6,6 +6,7 @@ using CSpec.Exceptions;
 using CSpec.Resources;
 using System.Collections;
 using System.Reflection;
+using CSpec.Proxy;
 
 namespace CSpec.Extensions.Tags
 {
@@ -139,6 +140,45 @@ namespace CSpec.Extensions.Tags
         }
 
         /// <summary>
+        /// Used on methods to instrut that a certain set of parameter data
+        /// should throw a specified exception.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="N"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static T Raise<T, N>(this T obj, N value)
+        {
+            Trace trace = GetTrace();
+
+            if(trace.Ex != null)
+                return obj;
+
+            throw new CSpecException(ExceptionMessages.Key + " @raise");
+        }
+
+        /// <summary>
+        /// Used on methods to instrut that a certain set of parameter data
+        /// should not throw a specified exception.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="N"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static T NotRaise<T, N>(this T obj, N value)
+        {
+            Trace trace = GetTrace();
+
+            if (trace.Ex == null)
+                return obj;
+
+            throw new CSpecException(ExceptionMessages.Key + " @not_raise");
+        }
+
+
+        /// <summary>
         /// Used on numbers, represents the logical rule actual == expected +/- delta
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -173,6 +213,25 @@ namespace CSpec.Extensions.Tags
             }
 
             throw new CSpecException(ExceptionMessages.Key + " @be_close");
+        }
+
+        /// <summary>
+        /// Gets the Trace object if the 
+        /// consumer implement an InterfaceType
+        /// </summary>
+        /// <returns></returns>
+        private static Trace GetTrace()
+        {
+             object lookupObj = Testing.CSpecTestRunnerLookup.CurrentDescribedObject;
+
+            if (lookupObj == null)
+            {
+                throw new CSpecException(ExceptionMessages.NoInterface);
+            }
+
+            Trace trace = (Trace)lookupObj.GetType().GetField("trace").GetValue(lookupObj);
+
+            return trace;
         }
 
         private static bool ReflectionEqual(object actual, object expected)

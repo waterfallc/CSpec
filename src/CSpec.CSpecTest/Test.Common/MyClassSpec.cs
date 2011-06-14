@@ -16,7 +16,7 @@ namespace Test.Common
 
         DescribeAll describe_sum =
             (@it, @do) =>
-            {
+        	{
                 @it("Sums two numbers, given 1 and 1 it should be 2");
                 @do.Sum(1, 1).Should(@be => 2);
             };
