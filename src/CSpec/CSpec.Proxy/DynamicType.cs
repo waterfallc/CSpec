@@ -1,4 +1,29 @@
-﻿using System;
+﻿#region Licence
+// Copyright (c) 2011 BAX Services Bartosz Adamczewski
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -7,6 +32,18 @@ using CSpec.Proxy;
 
 namespace CSpec.Proxy
 {
+    /*
+     * NOTE: Stolen from my other project InternalClasses
+     * A lot of things here might not be used right now
+     * but might be in the future.
+     * 
+     * This class is not reausable anymore
+     */
+
+    /// <summary>
+    /// Allows the consumer to create a dynamic proxy type, using fluent
+    /// interface.
+    /// </summary>
     public class DynamicType : DynamicBase, IDynamicTypeBuilder
     {
         private TypeBuilder typeBuilder;
@@ -31,7 +68,7 @@ namespace CSpec.Proxy
 
 
             CreateTypeEntry();
-            CreateField();
+            CreateField("trace", typeof(ProxyTrace));
             CreateConstructors();
 
             return this;
@@ -55,11 +92,6 @@ namespace CSpec.Proxy
             }
         }
 
-        private void CreateField()
-        {
-            fieldBuilder = typeBuilder.DefineField("trace", typeof(Trace), FieldAttributes.Public);
-        }
-
         /// <summary>
         /// Creates the Constructors.
         /// </summary>
@@ -74,7 +106,7 @@ namespace CSpec.Proxy
                 ilGenerator = constructorBuilder.GetILGenerator();
 
                 ilGenerator.Emit(OpCodes.Ldarg_0);
-                ilGenerator.Emit(OpCodes.Newobj, typeof(Trace).GetConstructor(new Type[] {}));
+                ilGenerator.Emit(OpCodes.Newobj, typeof(ProxyTrace).GetConstructor(new Type[] {}));
                 ilGenerator.Emit(OpCodes.Stfld, fieldBuilder);
 
                 ilGenerator.Emit(OpCodes.Ldarg_0);
@@ -93,9 +125,6 @@ namespace CSpec.Proxy
             }
         }
 
- 
-        #region IDynamicTypeBuilder Members
-
         /// <summary>
         /// Opens the Method For Creation.
         /// </summary>
@@ -107,6 +136,17 @@ namespace CSpec.Proxy
             ilGenerator = builder.GetILGenerator();
             this.method = method;
             return this;
+        }
+
+        /// <summary>
+        /// Creates an public field of the ProxyType
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private void CreateField(string name, Type type)
+        {
+            fieldBuilder = typeBuilder.DefineField(name, type, FieldAttributes.Public);
         }
 
         /// <summary>
@@ -125,17 +165,62 @@ namespace CSpec.Proxy
                 }
                 else
                 {
-                   ilGenerator.DeclareLocal(param.ParameterType);
+                    ilGenerator.DeclareLocal(param.ParameterType);
                 }
             }
 
+            //TODO: Refactor!
+            //This method needs to be changes as it's hard to read
+            //the solution is to split it up into few method that represent chunks
+            //of the solution.
+            //right now we have anonymous namespaces to the rescue!
+            //I havent settled on a final look of the ProxyTrace class thus
+            //it's gointg to stay as is for a while
+
             ilGenerator.BeginExceptionBlock();
 
+            //Load the field in the proxy.
+            //and set it
+            {
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(ProxyTrace).GetProperty("Target").GetSetMethod(), null);
+            }
+
+            //Track the called method
+            //it boils down to MethodBase.GetCurrentMethod
+            //then add that to a list in the ProxyTrace
+            {
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(ProxyTrace).GetProperty("MethodCalls").GetGetMethod(), null);
+
+                LocalBuilder proxyMethodLocal = ilGenerator.DeclareLocal(typeof(ProxyMethod));
+
+                //Call a default constructor on ProxyMethod
+                ilGenerator.Emit(OpCodes.Newobj, typeof(ProxyMethod).GetConstructors()[0]);
+                //
+                ilGenerator.Emit(OpCodes.Stloc, proxyMethodLocal.LocalIndex);
+                ilGenerator.Emit(OpCodes.Ldloc, proxyMethodLocal.LocalIndex);
+                ilGenerator.Emit(OpCodes.Ldnull);
+                ilGenerator.Emit(OpCodes.Callvirt, typeof(ProxyMethod).GetProperty("Ex").GetSetMethod());
+                ilGenerator.Emit(OpCodes.Ldloc, proxyMethodLocal.LocalIndex);
+
+                ilGenerator.EmitCall(OpCodes.Call, typeof(System.Reflection.MethodBase).GetMethod("GetCurrentMethod"), null);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(System.Reflection.MemberInfo).GetProperty("Name").GetGetMethod(), null);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(ProxyMethod).GetProperty("MethodName").GetSetMethod(), null);
+                ilGenerator.Emit(OpCodes.Ldloc, proxyMethodLocal.LocalIndex);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(List<ProxyMethod>).GetMethod("Add"), null);
+            }
+
+            //Load *this
             ilGenerator.Emit(OpCodes.Ldarg_0);
 
             for (int i = 0; i < parameters.Length; i++)
                 ilGenerator.Emit(OpCodes.Ldarg, i + 1);
 
+            //Call the oryginal method
             ilGenerator.EmitCall(OpCodes.Call, method, null);
             LocalBuilder local = null;
 
@@ -151,58 +236,56 @@ namespace CSpec.Proxy
                 ilGenerator.Emit(OpCodes.Ldloc, local.LocalIndex);
             }
 
-            //TODO: Refactor!
-           
-            ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
-            ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.EmitCall(OpCodes.Callvirt, typeof(Trace).GetProperty("Target").GetSetMethod(), null);
-
-            ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
-            ilGenerator.EmitCall(OpCodes.Callvirt, typeof(Trace).GetProperty("MethodCalls").GetGetMethod(), null);
-            ilGenerator.EmitCall(OpCodes.Call, typeof(System.Reflection.MethodBase).GetMethod("GetCurrentMethod"), null);
-            ilGenerator.EmitCall(OpCodes.Callvirt, typeof(System.Reflection.MemberInfo).GetProperty("Name").GetGetMethod(), null);
-            ilGenerator.EmitCall(OpCodes.Callvirt, typeof(List<string>).GetMethod("Add"), null);
+            //Leave the try block
 
             ilGenerator.Emit(OpCodes.Leave, label);
 
             ilGenerator.BeginCatchBlock(typeof(Exception));
 
-            ilGenerator.Emit(OpCodes.Stloc, exLocal.LocalIndex);
-            ilGenerator.Emit(OpCodes.Ldarg_0);
-            ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
-            ilGenerator.Emit(OpCodes.Ldloc, exLocal.LocalIndex);
-            ilGenerator.EmitCall(OpCodes.Callvirt, typeof(Trace).GetProperty("Ex").GetSetMethod(), null);
+            //If the method call, blows up then don't throw exception
+            //but insted assign that to the MethodCalls list in ProxyTrace
+            {
+                ilGenerator.Emit(OpCodes.Stloc, exLocal.LocalIndex);
 
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(ProxyTrace).GetProperty("MethodCalls").GetGetMethod(), null);
+
+                ilGenerator.Emit(OpCodes.Ldarg_0);
+                ilGenerator.Emit(OpCodes.Ldfld, fieldBuilder);
+
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(ProxyTrace).GetProperty("MethodCalls").GetGetMethod(), null);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(List<ProxyMethod>).GetProperty("Count").GetGetMethod(), null);
+                ilGenerator.Emit(OpCodes.Ldc_I4_1);
+                ilGenerator.Emit(OpCodes.Sub);
+                ilGenerator.EmitCall(OpCodes.Callvirt, typeof(List<ProxyMethod>).GetProperty("Item").GetGetMethod(), null);
+                ilGenerator.Emit(OpCodes.Ldloc, exLocal.LocalIndex);
+                ilGenerator.Emit(OpCodes.Callvirt, typeof(ProxyMethod).GetProperty("Ex").GetSetMethod());
+            }
 
             ilGenerator.EndExceptionBlock();
-            
+
             ilGenerator.MarkLabel(label);
+
             if (method.ReturnType != typeof(void))
             {
-
-
                 ilGenerator.Emit(OpCodes.Ldloc, local.LocalIndex);
             }
 
             ilGenerator.Emit(OpCodes.Ret);
-            
+
             return this;
         }
 
         /// <summary>
-        /// Creates the Type.
+        /// Creates the ProxyType.
         /// </summary>
         /// <returns>System.Type.</returns>
         public Type CreateType()
-        {
-            
+        {       
             resultType = typeBuilder.CreateType();
             
             return resultType;
         }
-
-        #endregion
     }
 }

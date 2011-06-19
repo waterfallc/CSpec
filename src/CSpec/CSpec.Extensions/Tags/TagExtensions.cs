@@ -1,4 +1,29 @@
-﻿using System;
+﻿#region Licence
+// Copyright (c) 2011 BAX Services Bartosz Adamczewski
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -150,9 +175,10 @@ namespace CSpec.Extensions.Tags
         /// <returns></returns>
         public static T Raise<T, N>(this T obj, N value)
         {
-            Trace trace = GetTrace();
+            ProxyTrace trace = GetTrace();
+            ProxyMethod methodCall = trace.MethodCalls.Last();
 
-            if(trace.Ex != null)
+            if (methodCall.Ex != null)
                 return obj;
 
             throw new CSpecException(ExceptionMessages.Key + " @raise");
@@ -169,14 +195,14 @@ namespace CSpec.Extensions.Tags
         /// <returns></returns>
         public static T NotRaise<T, N>(this T obj, N value)
         {
-            Trace trace = GetTrace();
+            ProxyTrace trace = GetTrace();
+            ProxyMethod methodCall = trace.MethodCalls.Last();
 
-            if (trace.Ex == null)
+            if (methodCall.Ex == null)
                 return obj;
 
             throw new CSpecException(ExceptionMessages.Key + " @not_raise");
         }
-
 
         /// <summary>
         /// Used on numbers, represents the logical rule actual == expected +/- delta
@@ -220,16 +246,16 @@ namespace CSpec.Extensions.Tags
         /// consumer implement an InterfaceType
         /// </summary>
         /// <returns></returns>
-        private static Trace GetTrace()
+        private static ProxyTrace GetTrace()
         {
-             object lookupObj = Testing.CSpecTestRunnerLookup.CurrentDescribedObject;
+            object lookupObj = Testing.CSpecTestRunnerLookup.CurrentDescribedObject;
 
             if (lookupObj == null)
             {
                 throw new CSpecException(ExceptionMessages.NoInterface);
             }
 
-            Trace trace = (Trace)lookupObj.GetType().GetField("trace").GetValue(lookupObj);
+            ProxyTrace trace = (ProxyTrace)lookupObj.GetType().GetField("trace").GetValue(lookupObj);
 
             return trace;
         }

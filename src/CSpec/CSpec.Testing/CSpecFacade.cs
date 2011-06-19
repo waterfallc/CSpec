@@ -1,4 +1,29 @@
-﻿using System;
+﻿#region Licence
+// Copyright (c) 2011 BAX Services Bartosz Adamczewski
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,16 +44,19 @@ namespace CSpec.Testing
     /// <typeparam name="TClass"></typeparam>
     public class CSpecFacade<TClass> : CSpecFacadeBase
     {
+
+
         /// <summary>
         /// Gets the described object.
         /// </summary>
         protected TClass ObjSpec { get; private set; }
 
 		/// <summary>
-		/// Base class, you need to call it to initialize
+		/// base constructor, you need to call it to initialize
 		/// the facade. 
 		/// </summary>
 		/// <param name="objSpec">
+        /// Class that is being speced (MyClass)
 		///  <see cref="TClass"/>
 		/// </param>
         protected CSpecFacade(TClass objSpec)
@@ -39,12 +67,19 @@ namespace CSpec.Testing
                 Proxy.ProxyGenerator gen = new CSpec.Proxy.ProxyGenerator();
                 var obj = Activator.CreateInstance(gen.CreateProxy(objSpec.GetType(), inter));
                 ObjSpec = (TClass)obj;
+                CSpec.Testing.CSpecTestRunnerLookup.CurrentDescribedObject = ObjSpec; 
+
             }
             else
                 InitializeFacade(objSpec);
         }
 
-
+        /// <summary>
+        /// Default constructor, use it in case you want to 
+        /// call InitializeFacade in your facade.
+        /// 
+        /// To see what InitializeFacade is for check the comments for the method.
+        /// </summary>
         protected CSpecFacade()
         { }
 

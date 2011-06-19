@@ -1,9 +1,35 @@
-﻿using System;
+﻿#region Licence
+// Copyright (c) 2011 BAX Services Bartosz Adamczewski
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
 using CSpec.Proxy;
+using System.IO;
 
 namespace CSpec.Testing
 {
@@ -14,7 +40,7 @@ namespace CSpec.Testing
     /// <summary>
     /// Validates objects, that are described by CSpec.
     /// </summary>
-    public class CSpecTestRunner : CSpecTestRunnerLookup, ITestRunner
+    public class CSpecTestRunner : ITestRunner
     {
         /// <summary>
         /// Gets operations passed
@@ -41,14 +67,14 @@ namespace CSpec.Testing
         /// </summary>
         public event Action<CSpecTestItem> AfterOperation;
 
-         /// <summary>
-         /// Runs tests on an assembly, it is advides that all 
-         /// descriptor types will be kept in seperate assembly.
-         /// </summary>
-         /// <param name="asm"></param>
+
+        /// <summary>
+        /// Runs tests on an assembly, it is advides that all 
+        /// descriptor types will be kept in seperate assembly.
+        /// </summary>
+        /// <param name="asm"></param>
         public void RunTestOnAssembly(Assembly asm)
         {
-
             foreach (var cspecType in asm.GetTypes())
             {
                 RunTestOnType(cspecType);
@@ -64,7 +90,10 @@ namespace CSpec.Testing
             //Get the object and call the constructor.
             object obj = null;
             CSpecTestItem testItem = null;
-    
+
+            if (objType.IsInterface)
+                return;
+
             try
             {
                 obj = Activator.CreateInstance(objType);
@@ -111,7 +140,7 @@ namespace CSpec.Testing
         {
             MethodInfo beforeOp = null;
             MethodInfo afterOp = null;
-            Trace trace = null;
+            ProxyTrace trace = null;
             Type objType = obj.GetType();
 
             //Now call the operation methods.
@@ -135,14 +164,15 @@ namespace CSpec.Testing
                 {
                     if (describedObject != null && describedObject.GetType().GetInterfaces().Length != 0)
                     {
-                        trace = (Trace)describedObject.GetType().GetField("trace").GetValue(describedObject);
-                        trace = new Trace();
+                        trace = (ProxyTrace)describedObject.GetType().GetField("trace").GetValue(describedObject);
+                        trace = new ProxyTrace();
                         describedObject.GetType().GetField("trace").SetValue(describedObject, trace);
 
                         //put to lookup
                         //NOTE: when doing multithreaded runners the entire section of this code
                         //should be locked by monitor
-                        CurrentDescribedObject = describedObject;
+                        //NOTE: Moved to CSpecFacade constructor, it has much more sence there
+                        //CurrentDescribedObject = describedObject;
                     }
 
                     if (field.FieldType.Name == "DescribeAll")
@@ -180,7 +210,7 @@ namespace CSpec.Testing
         /// <summary>
         /// Handles the exceptions thrown by the testing method.
         /// </summary>
-        private void HandleRunnerException(Exception ex, CSpecTestItem testItem, Trace trace)
+        private void HandleRunnerException(Exception ex, CSpecTestItem testItem, ProxyTrace trace)
         {
             Failed++;
 
@@ -194,8 +224,8 @@ namespace CSpec.Testing
                 StringBuilder traceErrorBuilder = new StringBuilder();
                 traceErrorBuilder.AppendLine("\n Trace: ");
 
-                foreach (var item in trace.MethodCalls)
-                    traceErrorBuilder.AppendLine(item);
+                //foreach (var item in trace.MethodCalls)
+                //    traceErrorBuilder.AppendLine(item);
 
                 testItem.Results += traceErrorBuilder.ToString();
             }

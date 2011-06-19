@@ -1,3 +1,28 @@
+#region Licence
+// Copyright (c) 2011 BAX Services Bartosz Adamczewski
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+#endregion
+
 using System;
 using CSpec.Extensions;
 using CSpec.Exceptions;
@@ -9,6 +34,9 @@ using System.IO;
 
 namespace Test.Spec
 {
+    /// <summary>
+    /// Spec class that tests the Runner, of CSpec.
+    /// </summary>
 	public class CSpecTestRunnerSpec : CSpecFacade<ITestRunner>
 	{
         public CSpecTestRunnerSpec()
@@ -27,6 +55,9 @@ namespace Test.Spec
         private MyClassSpec myClassSpec;
         private DescribeAll run_on_type;
 
+        /// <summary>
+        /// Create a new instance of our test class befor each operation.
+        /// </summary>
 		protected override void BeforeOperation()
 		{
             myClassSpec = new MyClassSpec();
@@ -49,6 +80,7 @@ namespace Test.Spec
                    @do.RunTestOnType(myClassSpec.GetType());
                    @do.Passed.Should(@be => 3);
                    @do.Failed.Should(@be => 0);
+
                };
         }
 
